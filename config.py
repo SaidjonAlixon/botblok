@@ -1,36 +1,36 @@
 # -*- coding: utf-8 -*-
+import os
+from dotenv import load_dotenv
+
+# .env faylidan o'zgaruvchilarni o'qish (agar mavjud bo'lsa)
+load_dotenv()
 
 # -------------------- BOT SOZLAMALARI --------------------
-# Quyidagi qatorga o'z botingizning tokenini yozing
-# Misol: BOT_TOKEN = "1234567890:ABCDEFG..."
-BOT_TOKEN = "PASTE_YOUR_BOT_TOKEN_HERE"
+# Bot tokeni Render'dagi Environment Variables'dan olinadi
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 # -------------------- ADMIN SOZLAMALARI --------------------
-# Bu yerga o'zingizning Telegram ID raqamingizni yozing
-# Misol: ADMIN_ID = 123456789
-ADMIN_ID = 0 # O'zingizning ID raqamingizni kiriting
+# Admin ID raqami Render'dagi Environment Variables'dan olinadi
+ADMIN_ID = int(os.getenv("ADMIN_ID", 0))
 
 # -------------------- MA'LUMOTLAR BAZASI --------------------
-# PostgreSQL uchun ulanish manzili. Render kabi xostinglarda avtomatik sozlanadi.
-# Misol: DATABASE_URL="postgresql://user:password@host:port/database"
-DATABASE_URL = "postgresql://user:password@host:port/database"
+# PostgreSQL manzili Render tomonidan avtomatik ta'minlanadi
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 # -------------------- KANALLAR --------------------
-# Botdan foydalanish uchun majburiy obuna bo'lish kerak bo'lgan kanallar
-# Misol: CHANNELS = ["@test_kanal", "@ikkinchi_kanal"]
-CHANNELS = []
+# Kanallar ro'yxati (vergul bilan ajratilgan holda, masalan: @kanal1,@kanal2)
+CHANNELS_STR = os.getenv("CHANNELS", "")
+CHANNELS = [channel.strip() for channel in CHANNELS_STR.split(',') if channel.strip()]
 
 # -------------------- RO'YXATDAN O'TISH KANALI --------------------
-# Yangi foydalanuvchilar haqida ma'lumot yuboriladigan kanal
-# Kanal ID'sini (masalan, -100123456789) yoki username'ini (masalan, "@my_reg_channel") kiriting
-REG_CHANNEL = None
+REG_CHANNEL = os.getenv("REG_CHANNEL")
 
 # -------------------- QO'LLAB-QUVVATLASH GURUHI --------------------
-SUPPORT_GROUP_URL = "https://t.me/my_support_group"
+SUPPORT_GROUP_URL = os.getenv("SUPPORT_GROUP_URL", "https://t.me/my_support_group")
 
 # -------------------- WEBAPP SOZLAMALARI --------------------
-WEBAPP_URL_TELEGRAM = "https://t.me/my_bot/my_app" # Telegram WebApp uchun to'liq URL
-WEBAPP_URL_SITE = "https://my-site.com" # Tashqi sayt uchun URL
+WEBAPP_URL_TELEGRAM = os.getenv("WEBAPP_URL_TELEGRAM", "https://t.me/my_bot/my_app")
+WEBAPP_URL_SITE = os.getenv("WEBAPP_URL_SITE", "https://my-site.com")
 
 # -------------------- HAMKORLIK UCHUN SO'ROVNOMA --------------------
 PARTNERSHIP_FORM_FIELDS = [
