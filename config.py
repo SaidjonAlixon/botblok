@@ -26,11 +26,11 @@ CHANNELS = [channel.strip() for channel in CHANNELS_STR.split(',') if channel.st
 REG_CHANNEL = os.getenv("REG_CHANNEL")
 
 # -------------------- QO'LLAB-QUVVATLASH GURUHI --------------------
-SUPPORT_GROUP_URL = os.getenv("SUPPORT_GROUP_URL", "https://t.me/my_support_group")
+SUPPORT_GROUP_URL = os.getenv("SUPPORT_GROUP_URL")
 
 # -------------------- WEBAPP SOZLAMALARI --------------------
-WEBAPP_URL_TELEGRAM = os.getenv("WEBAPP_URL_TELEGRAM", "https://t.me/my_bot/my_app")
-WEBAPP_URL_SITE = os.getenv("WEBAPP_URL_SITE", "https://my-site.com")
+WEBAPP_URL_TELEGRAM = os.getenv("WEBAPP_URL_TELEGRAM")
+WEBAPP_URL_SITE = os.getenv("WEBAPP_URL_SITE")
 
 # -------------------- HAMKORLIK UCHUN SO'ROVNOMA --------------------
 PARTNERSHIP_FORM_FIELDS = [

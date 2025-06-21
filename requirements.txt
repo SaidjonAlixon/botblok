@@ -7,6 +7,9 @@ asyncpg==0.29.0
 # Muhit o'zgaruvchilarini boshqarish
 python-dotenv==1.0.1
 
+# Render'da "Web Service"ni uyg'oq saqlash uchun
+Flask==3.0.3
+
 # Standart Python kutubxonalari (Python bilan birga keladi, alohida o'rnatish shart emas)
 # asyncio - asinxron dasturlash uchun
 # logging - log yozish uchun

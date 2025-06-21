@@ -2,6 +2,9 @@ import asyncio
 import logging
 from aiogram import Bot, Dispatcher, types
 from aiogram.fsm.storage.memory import MemoryStorage
+from threading import Thread
+from flask import Flask
+import os
 
 from config import BOT_TOKEN, ADMIN_ID, REG_CHANNEL
 from database import create_pool, init_db, pool
@@ -76,8 +79,26 @@ async def main():
             await pool.close()
             logging.info("PostgreSQL connection pool (finally block) yopildi.")
 
+# --- Render uchun Web Server ---
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot is alive!"
+
+def run_web_server():
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)
+
+def keep_alive():
+    """Veb serverni alohida oqimda (thread) ishga tushiradi."""
+    t = Thread(target=run_web_server)
+    t.start()
+# -----------------------------
+
 if __name__ == '__main__':
     try:
+        keep_alive()
         logging.info("Bot ishga tushirilmoqda...")
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
