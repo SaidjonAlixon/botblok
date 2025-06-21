@@ -1,0 +1,1 @@
+Bu papkaga botda ishlatiladigan barcha rasm fayllarini joylashtiring (masalan, welcome.jpg). 

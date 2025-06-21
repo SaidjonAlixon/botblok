@@ -1,0 +1,5 @@
+# nixpacks.toml
+
+[phases.setup]
+# Add system packages needed for building Python dependencies like asyncpg
+aptPkgs = ["libpq-dev"] 
