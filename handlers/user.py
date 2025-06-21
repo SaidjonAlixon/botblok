@@ -6,12 +6,12 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile, CallbackQuery, WebAppInfo
 
 from config import CHANNELS, REG_CHANNEL, ADMIN_ID, WEBAPP_URL_TELEGRAM, WEBAPP_URL_SITE, SUPPORT_GROUP_URL, PARTNERSHIP_FORM_FIELDS
-from database import user_exists, add_user, get_user
+from database import user_exists, add_user, get_user, count_users
 from keyboards import get_main_menu, get_subscribe_keyboard, back_menu, phone_request_menu
 
 user_router = Router()
 
-# Foydalanuvchi holatlari (FSM)
+# Foydalanuvchi holatlari
 class RegistrationStates(StatesGroup):
     fullname = State()
     age = State()
@@ -65,8 +65,39 @@ async def check_subscription(user_id: int, bot: Bot):
                 return False
         except Exception as e:
             logging.error(f"Kanalni tekshirishda xato ({channel}): {e}")
-            return False  # Agar kanal topilmasa yoki boshqa xatolik bo'lsa
+            return False
     return True
+
+# Yangi foydalanuvchini bazaga qo'shish va xabar yuborish
+async def register_new_user(user: types.User, bot: Bot):
+    """Yangi foydalanuvchini ro'yxatdan o'tkazadi va kerakli xabarlarni yuboradi."""
+    is_new = await add_user(
+        user_id=user.id,
+        username=user.username,
+        full_name=user.full_name
+    )
+
+    # Agar foydalanuvchi haqiqatdan ham yangi bo'lsa, kanalga xabar yuboramiz
+    if is_new and REG_CHANNEL:
+        try:
+            reg_message = (
+                f"✅ Yangi foydalanuvchi ro'yxatdan o'tdi!\n\n"
+                f"👤 Ism: {user.full_name}\n"
+                f"🆔 ID: `{user.id}`\n"
+                f"✍️ Username: @{user.username if user.username else 'Mavjud emas'}"
+            )
+            await bot.send_message(REG_CHANNEL, reg_message, parse_mode='Markdown')
+        except Exception as e:
+            logging.error(f"Registratsiya kanaliga ({REG_CHANNEL}) xabar yuborishda xato: {e}")
+
+# Asosiy menyuni yuborish funksiyasi
+async def show_main_menu(message: Message, text: str):
+    photo_path = 'rasmlar/welcome.jpg'
+    await message.answer_photo(
+        photo=FSInputFile(photo_path),
+        caption=text,
+        reply_markup=get_main_menu(message.from_user.id)
+    )
 
 # /start buyrug'i uchun handler
 @user_router.message(CommandStart())
@@ -80,7 +111,7 @@ async def start_handler(message: Message, bot: Bot, state: FSMContext):
         return
 
     if not await user_exists(message.from_user.id):
-        await message.answer("Assalomu alaykum! Botimizga xush kelibsiz. Ro'yxatdan o'tishni boshlaymiz.\n\nIltimos, to'liq ism-sharifingizni kiriting:")
+        await message.answer("Assalomu alaykum! Botimizga xush kelibsiz. Ro'yxatdan o'tishni boshlaymiz.\n\nIltimos, Ism Familiya kiriting:")
         await state.set_state(RegistrationStates.fullname)
     else:
         photo_path = 'rasmlar/welcome.jpg'
@@ -94,20 +125,16 @@ async def start_handler(message: Message, bot: Bot, state: FSMContext):
 @user_router.callback_query(F.data == "check_subs")
 async def check_subs_callback(callback: types.CallbackQuery, bot: Bot, state: FSMContext):
     if await check_subscription(callback.from_user.id, bot):
-        # Obuna tasdiqlandi, eski xabarni o'chiramiz
         await callback.message.delete()
         
-        # Foydalanuvchi bazada bor-yo'qligini tekshiramiz
         if not await user_exists(callback.from_user.id):
-            # Agar yo'q bo'lsa, ro'yxatdan o'tishni boshlaymiz
             await callback.message.answer(
                 "✅ Rahmat! Siz barcha kanallarga obuna bo'ldingiz.\n\n"
                 "Endi ro'yxatdan o'tishni boshlaymiz.\n\n"
-                "Iltimos, to'liq ism-sharifingizni kiriting:"
+                "Iltimos, Ism Familiya kiriting:"
             )
             await state.set_state(RegistrationStates.fullname)
         else:
-            # Agar bazada mavjud bo'lsa, asosiy menyuni ko'rsatamiz
             photo_path = 'rasmlar/welcome.jpg'
             await callback.message.answer_photo(
                 photo=FSInputFile(photo_path),
@@ -115,9 +142,8 @@ async def check_subs_callback(callback: types.CallbackQuery, bot: Bot, state: FS
                 reply_markup=get_main_menu(callback.from_user.id)
             )
         
-        await callback.answer() # Callbackga javob qaytaramiz
+        await callback.answer()
     else:
-        # Agar obuna to'liq bo'lmasa
         await callback.answer("Siz hali barcha kanallarga obuna bo'lmadingiz.", show_alert=True)
 
 # --- Ro'yxatdan o'tish jarayoni ---
@@ -145,29 +171,31 @@ async def get_phone(message: Message, state: FSMContext, bot: Bot):
     await state.update_data(phone=message.contact.phone_number)
     data = await state.get_data()
     
-    user_id = message.from_user.id
-    fullname = data.get('fullname')
-    age = data.get('age')
-    region = data.get('region')
-    phone = data.get('phone')
-    username = message.from_user.username
-
-    user_number = await add_user(user_id, fullname, age, region, phone, username)
+    await add_user(
+        user_id=message.from_user.id,
+        username=message.from_user.username,
+        full_name=data.get('fullname'),
+        age=data.get('age'),
+        region=data.get('region'),
+        phone=data.get('phone')
+    )
 
     await state.clear()
+    
+    user_count = await count_users()
 
     # Admin kanaliga xabar yuborish
     try:
         if REG_CHANNEL:
             reg_message = (
                 f"✅ Yangi foydalanuvchi ro'yxatdan o'tdi!\n\n"
-                f"🔢 Tartib raqami: #{user_number}\n"
-                f"👤 Ism: {fullname}\n"
-                f"🆔 ID: `{user_id}`\n"
-                f"✍️ Username: @{username if username else 'Mavjud emas'}\n"
-                f"🎂 Yosh: {age}\n"
-                f"📍 Manzil: {region}\n"
-                f"📞 Telefon: `{phone}`"
+                f"🔢 Tartib raqami: #{user_count}\n"
+                f"👤 Ism: {data.get('fullname')}\n"
+                f"🆔 ID: `{message.from_user.id}`\n"
+                f"✍️ Username: @{message.from_user.username if message.from_user.username else 'Mavjud emas'}\n"
+                f"🎂 Yosh: {data.get('age')}\n"
+                f"📍 Manzil: {data.get('region')}\n"
+                f"📞 Telefon: `{data.get('phone')}`"
             )
             await bot.send_message(REG_CHANNEL, reg_message, parse_mode='Markdown')
     except Exception as e:
@@ -196,12 +224,16 @@ async def block_test_handler(message: Message):
 async def my_account_handler(message: Message):
     user_data = await get_user(message.from_user.id)
     if user_data:
+        # Foydalanuvchi nomini to'g'ri formatlash
+        username_str = f"@{user_data.get('username')}" if user_data.get('username') else "Mavjud emas"
+        
         account_info = (
             f"👤 *Sizning ma'lumotlaringiz:*\n\n"
-            f"🔹 *Ism-sharif:* {user_data.get('fullname', 'Noma`lum')}\n"
+            f"🔹 *To'liq ism:* {user_data.get('full_name', 'Noma`lum')}\n"
             f"🔹 *Yosh:* {user_data.get('age', 'Noma`lum')}\n"
             f"🔹 *Manzil:* {user_data.get('region', 'Noma`lum')}\n"
             f"🔹 *Telefon:* `{user_data.get('phone', 'Noma`lum')}`\n"
+            f"🔹 *Username:* {username_str}\n"
             f"🔹 *Telegram ID:* `{message.from_user.id}`"
         )
         await message.answer(account_info, parse_mode='Markdown')
@@ -248,7 +280,7 @@ async def process_appeal_message(message: Message, state: FSMContext, bot: Bot):
     await state.clear()
 
 @user_router.message(F.text == "👥 Qo'llab quvvatlash guruhi")
-async def support_handler(message: Message):
+async def support_group_handler(message: Message):
     keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=[[types.InlineKeyboardButton(text="Guruhga o'tish", url=SUPPORT_GROUP_URL)]]
     )
@@ -284,12 +316,12 @@ async def process_partnership_message(message: Message, state: FSMContext, bot: 
         await state.clear()
         await message.answer("Asosiy menyuga qaytdingiz.", reply_markup=get_main_menu(message.from_user.id))
         return
-
-    # Hamkorlik arizasini adminga yangi formatda yuborish
+        
+    # Hamkorlik xabarini adminga yangi formatda yuborish
     await send_feedback_to_admin(bot, message.from_user, message, "partnership")
 
     await message.answer(
-        "✅ Hamkorlik bo'yicha arizangiz adminga muvaffaqiyatli yuborildi.",
+        "✅ Hamkorlik so'rovingiz adminga muvaffaqiyatli yuborildi. Tez orada siz bilan bog'lanamiz.",
         reply_markup=get_main_menu(message.from_user.id)
     )
     await state.clear() 

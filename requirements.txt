@@ -1,5 +1,12 @@
+# Telegram Bot kutubxonalari
 aiogram==3.1.1
-python-dotenv==1.0.0
 
-logging
-aiosqlite 
+# Ma'lumotlar bazasi
+aiosqlite==0.19.0
+
+# Standart Python kutubxonalari (Python bilan birga keladi, alohida o'rnatish shart emas)
+# asyncio - asinxron dasturlash uchun
+# logging - log yozish uchun
+# os - fayl tizimi bilan ishlash uchun
+# datetime - sana va vaqt bilan ishlash uchun
+# json - JSON format bilan ishlash uchun 

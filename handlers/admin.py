@@ -7,7 +7,7 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, ContentType
 
 from config import ADMIN_ID
-from database import get_users_count, get_all_user_ids
+from database import count_users, get_all_user_ids
 from keyboards import admin_menu, back_menu, get_main_menu
 
 admin_router = Router()
@@ -28,7 +28,7 @@ async def admin_panel_handler(message: Message):
 
 @admin_router.message(F.text == "📊 Foydalanuvchilar statistikasi", F.from_user.id == ADMIN_ID)
 async def users_stats_handler(message: Message):
-    count = await get_users_count()
+    count = await count_users()
     await message.answer(f"Botdagi jami foydalanuvchilar soni: {count} ta.")
 
 @admin_router.message(F.text == "📢 Barchaga xabar yuborish", F.from_user.id == ADMIN_ID)

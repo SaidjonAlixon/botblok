@@ -1,52 +1,47 @@
 # -*- coding: utf-8 -*-
 
-import os
-from dotenv import load_dotenv
-
-# .env faylidagi o'zgaruvchilarni yuklash
-load_dotenv()
-
 # -------------------- BOT SOZLAMALARI --------------------
-# Bot tokeni muhit o'zgaruvchilaridan olinadi
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-if not BOT_TOKEN:
-    raise ValueError("BOT_TOKEN muhit o'zgaruvchisi topilmadi!")
+# Quyidagi qatorga o'z botingizning tokenini yozing
+# Misol: BOT_TOKEN = "1234567890:ABCdEFG..."
+BOT_TOKEN = "7436749862:AAFmCV4bVCaYUJirNL2_6uAa1H7ubF_zGRM" 
+
+if BOT_TOKEN == "PASTE_YOUR_BOT_TOKEN_HERE":
+    raise ValueError("Iltimos, config.py faylida o'z botingizning tokenini kiriting!")
 
 # -------------------- ADMIN SOZLAMALARI --------------------
-# Admin ID si muhit o'zgaruvchilaridan olinadi
-ADMIN_ID_STR = os.getenv("ADMIN_ID")
-if not ADMIN_ID_STR or not ADMIN_ID_STR.isdigit():
-    raise ValueError("ADMIN_ID muhit o'zgaruvchisi topilmadi yoki raqam emas!")
-ADMIN_ID = int(ADMIN_ID_STR)
+# Bu yerga o'zingizning Telegram ID raqamingizni yozing
+# Misol: ADMIN_ID = 123456789
+ADMIN_ID = 5222899144  # O'zingizning ID raqamingizni kiriting
+
+if ADMIN_ID == 5222899144:
+    print("DIQQAT: config.py faylida o'z ADMIN_ID raqamingizni kiritmagansiz!")
+
 
 # -------------------- MA'LUMOTLAR BAZASI --------------------
-# PostgreSQL ulanish manzili muhit o'zgaruvchilaridan olinadi
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL muhit o'zgaruvchisi topilmadi!")
+# Ma'lumotlar bazasi fayli nomi
+DB_NAME = 'database.db'
+DATABASE_URL = f"sqlite+aiosqlite:///{DB_NAME}"
+
 
 # -------------------- KANALLAR SOZLAMALARI --------------------
-# Majburiy obuna kanallari (vergul bilan ajratilgan holda)
-CHANNELS_STR = os.getenv("CHANNELS", "@BlokTest_uz,@CyberDataFort")
-CHANNELS = [channel.strip() for channel in CHANNELS_STR.split(',')]
+# Majburiy obuna kanallari (foydalanuvchi nomi bilan, @ belgisini qo'shing)
+CHANNELS = ["@BlokTest_uz", "@CyberDataFort"]
 
-# Ro'yxatdan o'tish kanali
-REG_CHANNEL_STR = os.getenv("REG_CHANNEL")
-REG_CHANNEL = int(REG_CHANNEL_STR) if REG_CHANNEL_STR and REG_CHANNEL_STR.lstrip('-').isdigit() else REG_CHANNEL_STR
+# Ro'yxatdan o'tgan foydalanuvchilar haqida xabar yuboriladigan kanal IDsi
+# Kanal ID raqam bo'lishi kerak, minus (-) belgisi bilan boshlanishi mumkin
+# Misol: REG_CHANNEL = -100123456789
+REG_CHANNEL = -1002706857485 # O'zingizning kanalingiz ID sini kiriting
 
 # -------------------- WEBAPP SOZLAMALARI --------------------
-WEBAPP_URL_TELEGRAM = os.getenv("WEBAPP_URL_TELEGRAM", 'https://blok-tets.uz/')
-WEBAPP_URL_SITE = os.getenv("WEBAPP_URL_SITE", 'https://t.me/BlokTest_uz/6')
+WEBAPP_URL_TELEGRAM = 'https://blok-tets.uz/'
+WEBAPP_URL_SITE = 'https://t.me/BlokTest_uz/6'
 
 # -------------------- QO'SHIMCHA SOZLAMALAR --------------------
-SUPPORT_GROUP_URL = os.getenv("SUPPORT_GROUP_URL", 'https://t.me/BlokTestuz_support')
+SUPPORT_GROUP_URL = 'https://t.me/BlokTestuz_support'
 PARTNERSHIP_FORM_FIELDS = [
     "O'quv markaz nomi",
     "Manzil",
     "Telefon raqam",
     "Hamkorlik turi",
     "Qo'shimcha ma'lumotlar (barchasini bir xabarda yuboring!)"
-]
-
-# Ma'lumotlar bazasi fayli nomi
-DB_NAME = 'database.db' 
+] 
