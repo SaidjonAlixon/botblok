@@ -2,7 +2,7 @@
 aiogram==3.1.1
 
 # Ma'lumotlar bazasi
-aiosqlite==0.19.0
+asyncpg==0.29.0
 
 # Standart Python kutubxonalari (Python bilan birga keladi, alohida o'rnatish shart emas)
 # asyncio - asinxron dasturlash uchun

@@ -4,7 +4,7 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from config import BOT_TOKEN, ADMIN_ID, REG_CHANNEL
-from database import init_db
+from database import create_pool, init_db, pool
 from handlers.user import user_router
 from handlers.admin import admin_router
 
@@ -16,6 +16,7 @@ logging.basicConfig(
 
 async def on_startup(bot: Bot):
     """Bot ishga tushganda bajariladigan amallar."""
+    await create_pool()
     await init_db()
     logging.info("Ma'lumotlar bazasi muvaffaqiyatli ishga tushirildi.")
     
@@ -42,9 +43,8 @@ async def on_startup(bot: Bot):
     except Exception as e:
         logging.error(f"Adminga ({ADMIN_ID}) xabar yuborishda xato: {e}. ADMIN_ID to'g'riligini tekshiring.")
 
-async def on_shutdown(dp: Dispatcher):
+async def on_shutdown():
     """Bot to'xtaganda connection pool ni yopadi."""
-    from database import pool
     if pool:
         await pool.close()
         logging.info("PostgreSQL connection pool yopildi.")
@@ -71,6 +71,10 @@ async def main():
         logging.critical(f"Botni ishga tushirishda jiddiy xatolik: {e}")
     finally:
         await bot.session.close()
+        # Ensure the pool is closed even if the bot crashes during startup
+        if pool:
+            await pool.close()
+            logging.info("PostgreSQL connection pool (finally block) yopildi.")
 
 if __name__ == '__main__':
     try:

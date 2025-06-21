@@ -1,69 +1,68 @@
 # -*- coding: utf-8 -*-
 
-import aiosqlite
-from config import DB_NAME
+import asyncpg
+import logging
+from config import DATABASE_URL
 
-# Ma'lumotlar bazasini yaratish va unga ulanish
+# Global connection pool
+pool: asyncpg.Pool = None
+
+async def create_pool():
+    """PostgreSQL uchun connection pool yaratadi."""
+    global pool
+    try:
+        pool = await asyncpg.create_pool(dsn=DATABASE_URL)
+        logging.info("PostgreSQL connection pool muvaffaqiyatli yaratildi.")
+    except Exception as e:
+        logging.critical(f"Connection pool yaratishda xatolik: {e}")
+        raise
+
 async def init_db():
-    """Ma'lumotlar bazasini yaratadi va unga kerakli jadvallarni qo'shadi."""
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute('''
+    """Ma'lumotlar bazasini ishga tushiradi va kerakli jadvallarni yaratadi."""
+    async with pool.acquire() as conn:
+        await conn.execute('''
             CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER UNIQUE NOT NULL,
+                id SERIAL PRIMARY KEY,
+                user_id BIGINT UNIQUE NOT NULL,
                 username TEXT,
                 full_name TEXT,
                 age TEXT,
                 region TEXT,
                 phone TEXT,
-                join_date DATETIME DEFAULT CURRENT_TIMESTAMP
+                join_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
             )
         ''')
-        await db.commit()
+        logging.info("'users' jadvali mavjud yoki muvaffaqiyatli yaratildi.")
 
-# Foydalanuvchi qo'shish
 async def add_user(user_id: int, username: str, full_name: str, age: str, region: str, phone: str):
-    """Foydalanuvchini bazaga qo'shadi va u mavjud bo'lmasa True qaytaradi."""
-    async with aiosqlite.connect(DB_NAME) as db:
-        cursor = await db.execute("SELECT user_id FROM users WHERE user_id = ?", (user_id,))
-        user_exists = await cursor.fetchone()
-        
-        if not user_exists:
-            await db.execute(
-                "INSERT INTO users (user_id, username, full_name, age, region, phone) VALUES (?, ?, ?, ?, ?, ?)",
-                (user_id, username, full_name, age, region, phone)
-            )
-            await db.commit()
-            return True
-        return False
+    """Foydalanuvchini bazaga qo'shadi. Agar foydalanuvchi yangi bo'lsa True qaytaradi."""
+    sql = """
+        INSERT INTO users (user_id, username, full_name, age, region, phone)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (user_id) DO NOTHING
+    """
+    async with pool.acquire() as conn:
+        result = await conn.execute(sql, user_id, username, full_name, age, region, phone)
+        return "INSERT 0 1" in result
 
-async def user_exists(user_id: int):
+async def user_exists(user_id: int) -> bool:
     """Foydalanuvchi bazada mavjudligini tekshiradi."""
-    async with aiosqlite.connect(DB_NAME) as db:
-        cursor = await db.execute("SELECT 1 FROM users WHERE user_id = ?", (user_id,))
-        return await cursor.fetchone() is not None
+    async with pool.acquire() as conn:
+        return await conn.fetchval("SELECT 1 FROM users WHERE user_id = $1", user_id) is not None
 
-# Barcha foydalanuvchilar sonini olish
-async def count_users():
+async def count_users() -> int:
     """Barcha foydalanuvchilar sonini qaytaradi."""
-    async with aiosqlite.connect(DB_NAME) as db:
-        cursor = await db.execute("SELECT COUNT(*) FROM users")
-        count = await cursor.fetchone()
-        return count[0] if count else 0
+    async with pool.acquire() as conn:
+        return await conn.fetchval("SELECT COUNT(*) FROM users")
 
-# Barcha foydalanuvchilar ID'larini olish
-async def get_all_user_ids():
+async def get_all_user_ids() -> list:
     """Barcha foydalanuvchilarning ID'larini ro'yxat qilib qaytaradi."""
-    async with aiosqlite.connect(DB_NAME) as db:
-        cursor = await db.execute("SELECT user_id FROM users")
-        rows = await cursor.fetchall()
-        return [row[0] for row in rows]
+    async with pool.acquire() as conn:
+        rows = await conn.fetch("SELECT user_id FROM users")
+        return [row['user_id'] for row in rows]
 
-# Foydalanuvchi ma'lumotlarini olish
-async def get_user(user_id: int):
+async def get_user(user_id: int) -> dict:
     """Foydalanuvchi ma'lumotlarini lug'at (dict) ko'rinishida qaytaradi."""
-    async with aiosqlite.connect(DB_NAME) as db:
-        db.row_factory = aiosqlite.Row # Natijalarni dict ko'rinishida olish uchun
-        cursor = await db.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
-        user_data = await cursor.fetchone()
-        return dict(user_data) if user_data else None 
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow("SELECT * FROM users WHERE user_id = $1", user_id)
+        return dict(row) if row else None 

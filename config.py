@@ -2,46 +2,40 @@
 
 # -------------------- BOT SOZLAMALARI --------------------
 # Quyidagi qatorga o'z botingizning tokenini yozing
-# Misol: BOT_TOKEN = "1234567890:ABCdEFG..."
-BOT_TOKEN = "7436749862:AAFmCV4bVCaYUJirNL2_6uAa1H7ubF_zGRM" 
-
-if BOT_TOKEN == "PASTE_YOUR_BOT_TOKEN_HERE":
-    raise ValueError("Iltimos, config.py faylida o'z botingizning tokenini kiriting!")
+# Misol: BOT_TOKEN = "1234567890:ABCDEFG..."
+BOT_TOKEN = "PASTE_YOUR_BOT_TOKEN_HERE"
 
 # -------------------- ADMIN SOZLAMALARI --------------------
 # Bu yerga o'zingizning Telegram ID raqamingizni yozing
 # Misol: ADMIN_ID = 123456789
-ADMIN_ID = 5222899144  # O'zingizning ID raqamingizni kiriting
-
-if ADMIN_ID == 5222899144:
-    print("DIQQAT: config.py faylida o'z ADMIN_ID raqamingizni kiritmagansiz!")
-
+ADMIN_ID = 0 # O'zingizning ID raqamingizni kiriting
 
 # -------------------- MA'LUMOTLAR BAZASI --------------------
-# Ma'lumotlar bazasi fayli nomi
-DB_NAME = 'database.db'
-DATABASE_URL = f"sqlite+aiosqlite:///{DB_NAME}"
+# PostgreSQL uchun ulanish manzili. Render kabi xostinglarda avtomatik sozlanadi.
+# Misol: DATABASE_URL="postgresql://user:password@host:port/database"
+DATABASE_URL = "postgresql://user:password@host:port/database"
 
+# -------------------- KANALLAR --------------------
+# Botdan foydalanish uchun majburiy obuna bo'lish kerak bo'lgan kanallar
+# Misol: CHANNELS = ["@test_kanal", "@ikkinchi_kanal"]
+CHANNELS = []
 
-# -------------------- KANALLAR SOZLAMALARI --------------------
-# Majburiy obuna kanallari (foydalanuvchi nomi bilan, @ belgisini qo'shing)
-CHANNELS = ["@BlokTest_uz", "@CyberDataFort"]
+# -------------------- RO'YXATDAN O'TISH KANALI --------------------
+# Yangi foydalanuvchilar haqida ma'lumot yuboriladigan kanal
+# Kanal ID'sini (masalan, -100123456789) yoki username'ini (masalan, "@my_reg_channel") kiriting
+REG_CHANNEL = None
 
-# Ro'yxatdan o'tgan foydalanuvchilar haqida xabar yuboriladigan kanal IDsi
-# Kanal ID raqam bo'lishi kerak, minus (-) belgisi bilan boshlanishi mumkin
-# Misol: REG_CHANNEL = -100123456789
-REG_CHANNEL = -1002706857485 # O'zingizning kanalingiz ID sini kiriting
+# -------------------- QO'LLAB-QUVVATLASH GURUHI --------------------
+SUPPORT_GROUP_URL = "https://t.me/my_support_group"
 
 # -------------------- WEBAPP SOZLAMALARI --------------------
-WEBAPP_URL_TELEGRAM = 'https://blok-tets.uz/'
-WEBAPP_URL_SITE = 'https://t.me/BlokTest_uz/6'
+WEBAPP_URL_TELEGRAM = "https://t.me/my_bot/my_app" # Telegram WebApp uchun to'liq URL
+WEBAPP_URL_SITE = "https://my-site.com" # Tashqi sayt uchun URL
 
-# -------------------- QO'SHIMCHA SOZLAMALAR --------------------
-SUPPORT_GROUP_URL = 'https://t.me/BlokTestuz_support'
+# -------------------- HAMKORLIK UCHUN SO'ROVNOMA --------------------
 PARTNERSHIP_FORM_FIELDS = [
-    "O'quv markaz nomi",
-    "Manzil",
+    "Tashkilot nomi",
+    "Mas'ul shaxs",
     "Telefon raqam",
-    "Hamkorlik turi",
-    "Qo'shimcha ma'lumotlar (barchasini bir xabarda yuboring!)"
+    "Hamkorlik taklifi"
 ] 
