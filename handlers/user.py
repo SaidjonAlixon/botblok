@@ -1,10 +1,10 @@
 import logging
+import html
 from aiogram import Router, F, Bot, types
 from aiogram.filters import CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile, CallbackQuery, WebAppInfo
-from aiogram.utils.markdown import htmlescape
 
 from config import CHANNELS, REG_CHANNEL, ADMIN_ID, WEBAPP_URL_TELEGRAM, WEBAPP_URL_SITE, SUPPORT_GROUP_URL, PARTNERSHIP_FORM_FIELDS
 from database import user_exists, add_user, get_user, count_users
@@ -29,7 +29,7 @@ async def send_feedback_to_admin(bot: Bot, from_user: types.User, message: types
     """Murojaat/hamkorlik haqidagi ma'lumotni adminga formatlab yuboradi."""
     hashtag = "#Murojaat" if feedback_type == "appeal" else "#Hamkorlik"
     
-    full_name_escaped = htmlescape(from_user.full_name)
+    full_name_escaped = html.escape(from_user.full_name)
     username_escaped = f"@{from_user.username}" if from_user.username else 'Mavjud emas'
 
     user_info_text = (
@@ -80,7 +80,7 @@ async def register_new_user(user: types.User, bot: Bot):
         # Haqiqiy `add_user` chaqiruvi barcha ma'lumotlar to'plangandan keyin bo'ladi.
         if REG_CHANNEL:
             try:
-                full_name_escaped = htmlescape(user.full_name)
+                full_name_escaped = html.escape(user.full_name)
                 username_escaped = f"@{user.username}" if user.username else 'Mavjud emas'
                 
                 reg_message = (
@@ -175,11 +175,11 @@ async def get_phone(message: Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
     
     # Ma'lumotlarni xavfsizlash (escaping)
-    full_name_escaped = htmlescape(data.get('fullname', ''))
+    full_name_escaped = html.escape(data.get('fullname', ''))
     username_escaped = f"@{message.from_user.username}" if message.from_user.username else 'Mavjud emas'
-    age_escaped = htmlescape(data.get('age', ''))
-    region_escaped = htmlescape(data.get('region', ''))
-    phone_escaped = htmlescape(data.get('phone', ''))
+    age_escaped = html.escape(data.get('age', ''))
+    region_escaped = html.escape(data.get('region', ''))
+    phone_escaped = html.escape(data.get('phone', ''))
     
     await add_user(
         user_id=message.from_user.id,
@@ -227,11 +227,11 @@ async def get_phone_text(message: Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
     
     # Ma'lumotlarni xavfsizlash (escaping)
-    full_name_escaped = htmlescape(data.get('fullname', ''))
+    full_name_escaped = html.escape(data.get('fullname', ''))
     username_escaped = f"@{message.from_user.username}" if message.from_user.username else 'Mavjud emas'
-    age_escaped = htmlescape(data.get('age', ''))
-    region_escaped = htmlescape(data.get('region', ''))
-    phone_escaped = htmlescape(data.get('phone', ''))
+    age_escaped = html.escape(data.get('age', ''))
+    region_escaped = html.escape(data.get('region', ''))
+    phone_escaped = html.escape(data.get('phone', ''))
 
     await add_user(
         user_id=message.from_user.id,
