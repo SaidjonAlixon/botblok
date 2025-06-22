@@ -4,6 +4,7 @@ from aiogram.filters import CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile, CallbackQuery, WebAppInfo
+from aiogram.utils.html import escape
 
 from config import CHANNELS, REG_CHANNEL, ADMIN_ID, WEBAPP_URL_TELEGRAM, WEBAPP_URL_SITE, SUPPORT_GROUP_URL, PARTNERSHIP_FORM_FIELDS
 from database import user_exists, add_user, get_user, count_users
@@ -28,15 +29,18 @@ async def send_feedback_to_admin(bot: Bot, from_user: types.User, message: types
     """Murojaat/hamkorlik haqidagi ma'lumotni adminga formatlab yuboradi."""
     hashtag = "#Murojaat" if feedback_type == "appeal" else "#Hamkorlik"
     
+    full_name_escaped = escape(from_user.full_name)
+    username_escaped = f"@{from_user.username}" if from_user.username else 'Mavjud emas'
+
     user_info_text = (
         f"{hashtag}\n\n"
-        f"👤 **Yuboruvchi:** {from_user.full_name}\n"
-        f"🆔 **ID:** `{from_user.id}`\n"
-        f"✨ **Username:** @{from_user.username if from_user.username else 'Mavjud emas'}"
+        f"👤 <b>Yuboruvchi:</b> {full_name_escaped}\n"
+        f"🆔 <b>ID:</b> <code>{from_user.id}</code>\n"
+        f"✨ <b>Username:</b> {username_escaped}"
     )
     
     # 1. Foydalanuvchi ma'lumotlarini yuborish
-    await bot.send_message(ADMIN_ID, user_info_text, parse_mode='Markdown')
+    await bot.send_message(ADMIN_ID, user_info_text, parse_mode='HTML')
     
     # 2. Asosiy xabarni forward qilish
     forwarded_message = await bot.forward_message(
@@ -71,24 +75,23 @@ async def check_subscription(user_id: int, bot: Bot):
 # Yangi foydalanuvchini bazaga qo'shish va xabar yuborish
 async def register_new_user(user: types.User, bot: Bot):
     """Yangi foydalanuvchini ro'yxatdan o'tkazadi va kerakli xabarlarni yuboradi."""
-    is_new = await add_user(
-        user_id=user.id,
-        username=user.username,
-        full_name=user.full_name
-    )
-
-    # Agar foydalanuvchi haqiqatdan ham yangi bo'lsa, kanalga xabar yuboramiz
-    if is_new and REG_CHANNEL:
-        try:
-            reg_message = (
-                f"✅ Yangi foydalanuvchi ro'yxatdan o'tdi!\n\n"
-                f"👤 Ism: {user.full_name}\n"
-                f"🆔 ID: `{user.id}`\n"
-                f"✍️ Username: @{user.username if user.username else 'Mavjud emas'}"
-            )
-            await bot.send_message(REG_CHANNEL, reg_message, parse_mode='Markdown')
-        except Exception as e:
-            logging.error(f"Registratsiya kanaliga ({REG_CHANNEL}) xabar yuborishda xato: {e}")
+    if not await user_exists(user.id):
+        # Agar foydalanuvchi yangi bo'lsa, kanalga xabar yuboramiz.
+        # Haqiqiy `add_user` chaqiruvi barcha ma'lumotlar to'plangandan keyin bo'ladi.
+        if REG_CHANNEL:
+            try:
+                full_name_escaped = escape(user.full_name)
+                username_escaped = f"@{user.username}" if user.username else 'Mavjud emas'
+                
+                reg_message = (
+                    f"✅ Botga yangi foydalanuvchi tashrif buyurdi (ro'yxatdan o'tishni boshladi).\n\n"
+                    f"👤 Ism: {full_name_escaped}\n"
+                    f"🆔 ID: <code>{user.id}</code>\n"
+                    f"✍️ Username: {username_escaped}"
+                )
+                await bot.send_message(REG_CHANNEL, reg_message, parse_mode='HTML')
+            except Exception as e:
+                logging.error(f"Registratsiya kanaliga ({REG_CHANNEL}) xabar yuborishda xato: {e}")
 
 # Asosiy menyuni yuborish funksiyasi
 async def show_main_menu(message: Message, text: str):
@@ -171,6 +174,13 @@ async def get_phone(message: Message, state: FSMContext, bot: Bot):
     await state.update_data(phone=message.contact.phone_number)
     data = await state.get_data()
     
+    # Ma'lumotlarni xavfsizlash (escaping)
+    full_name_escaped = escape(data.get('fullname', ''))
+    username_escaped = f"@{message.from_user.username}" if message.from_user.username else 'Mavjud emas'
+    age_escaped = escape(data.get('age', ''))
+    region_escaped = escape(data.get('region', ''))
+    phone_escaped = escape(data.get('phone', ''))
+    
     await add_user(
         user_id=message.from_user.id,
         username=message.from_user.username,
@@ -189,24 +199,75 @@ async def get_phone(message: Message, state: FSMContext, bot: Bot):
         if REG_CHANNEL:
             reg_message = (
                 f"✅ Yangi foydalanuvchi ro'yxatdan o'tdi!\n\n"
-                f"🔢 Tartib raqami: #{user_count}\n"
-                f"👤 Ism: {data.get('fullname')}\n"
-                f"🆔 ID: `{message.from_user.id}`\n"
-                f"✍️ Username: @{message.from_user.username if message.from_user.username else 'Mavjud emas'}\n"
-                f"🎂 Yosh: {data.get('age')}\n"
-                f"📍 Manzil: {data.get('region')}\n"
-                f"📞 Telefon: `{data.get('phone')}`"
+                f"🔢 <b>Tartib raqami:</b> #{user_count}\n"
+                f"👤 <b>Ism:</b> {full_name_escaped}\n"
+                f"🆔 <b>ID:</b> <code>{message.from_user.id}</code>\n"
+                f"✍️ <b>Username:</b> {username_escaped}\n"
+                f"🎂 <b>Yosh:</b> {age_escaped}\n"
+                f"📍 <b>Manzil:</b> {region_escaped}\n"
+                f"📞 <b>Telefon:</b> <code>{phone_escaped}</code>"
             )
-            await bot.send_message(REG_CHANNEL, reg_message, parse_mode='Markdown')
+            await bot.send_message(REG_CHANNEL, reg_message, parse_mode='HTML')
     except Exception as e:
-        logging.error(f"Registratsiya kanaliga ({REG_CHANNEL}) xabar yuborishda xato: {e}")
+        logging.error(f"Ro'yxatdan o'tish kanaliga ({REG_CHANNEL}) xabar yuborishda xatolik: {e}")
 
-    photo_path = 'rasmlar/welcome.jpg'
-    await message.answer_photo(
-        photo=FSInputFile(photo_path),
-        caption=f"Tabriklaymiz, siz muvaffaqiyatli ro'yxatdan o'tdingiz!\n\nSiz asosiy menyudasiz. Kerakli bo'limni tanlang:",
-        reply_markup=get_main_menu(message.from_user.id)
+    await message.answer(
+        "✅ Tabriklaymiz, siz muvaffaqiyatli ro'yxatdan o'tdingiz!",
+        reply_markup=ReplyKeyboardRemove()
     )
+    await show_main_menu(message, "Siz asosiy menyudasiz. Kerakli bo'limni tanlang:")
+
+@user_router.message(StateFilter(RegistrationStates.phone))
+async def get_phone_text(message: Message, state: FSMContext, bot: Bot):
+    # Bu funksiya agar foydalanuvchi tugmani bosmasdan, raqamini matn
+    # ko'rinishida yuborsa ishlaydi.
+    # Yuqoridagi get_phone funksiyasi bilan deyarli bir xil, faqat telefon
+    # raqamini message.text dan oladi.
+    await state.update_data(phone=message.text)
+    data = await state.get_data()
+    
+    # Ma'lumotlarni xavfsizlash (escaping)
+    full_name_escaped = escape(data.get('fullname', ''))
+    username_escaped = f"@{message.from_user.username}" if message.from_user.username else 'Mavjud emas'
+    age_escaped = escape(data.get('age', ''))
+    region_escaped = escape(data.get('region', ''))
+    phone_escaped = escape(data.get('phone', ''))
+
+    await add_user(
+        user_id=message.from_user.id,
+        username=message.from_user.username,
+        full_name=data.get('fullname'),
+        age=data.get('age'),
+        region=data.get('region'),
+        phone=message.text
+    )
+
+    await state.clear()
+    
+    user_count = await count_users()
+
+    # Admin kanaliga xabar yuborish
+    try:
+        if REG_CHANNEL:
+            reg_message = (
+                f"✅ Yangi foydalanuvchi ro'yxatdan o'tdi!\n\n"
+                f"🔢 <b>Tartib raqami:</b> #{user_count}\n"
+                f"👤 <b>Ism:</b> {full_name_escaped}\n"
+                f"🆔 <b>ID:</b> <code>{message.from_user.id}</code>\n"
+                f"✍️ <b>Username:</b> {username_escaped}\n"
+                f"🎂 <b>Yosh:</b> {age_escaped}\n"
+                f"📍 <b>Manzil:</b> {region_escaped}\n"
+                f"📞 <b>Telefon:</b> <code>{phone_escaped}</code>"
+            )
+            await bot.send_message(REG_CHANNEL, reg_message, parse_mode='HTML')
+    except Exception as e:
+        logging.error(f"Ro'yxatdan o'tish kanaliga ({REG_CHANNEL}) xabar yuborishda xatolik: {e}")
+
+    await message.answer(
+        "✅ Tabriklaymiz, siz muvaffaqiyatli ro'yxatdan o'tdingiz!",
+        reply_markup=ReplyKeyboardRemove()
+    )
+    await show_main_menu(message, "Siz asosiy menyudasiz. Kerakli bo'limni tanlang:")
 
 # --- Asosiy menyu tugmalari ---
 
